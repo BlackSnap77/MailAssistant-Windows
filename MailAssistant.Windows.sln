@@ -1,0 +1,27 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D7A83143-9476-422C-B250-1E403F927DDB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailAssistant.Windows", "src\MailAssistant.Windows\MailAssistant.Windows.csproj", "{DF6EE9DF-8D4B-4EC4-B3F1-4275F7E6B599}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DF6EE9DF-8D4B-4EC4-B3F1-4275F7E6B599}.Debug|x64.ActiveCfg = Debug|x64
+		{DF6EE9DF-8D4B-4EC4-B3F1-4275F7E6B599}.Debug|x64.Build.0 = Debug|x64
+		{DF6EE9DF-8D4B-4EC4-B3F1-4275F7E6B599}.Release|x64.ActiveCfg = Release|x64
+		{DF6EE9DF-8D4B-4EC4-B3F1-4275F7E6B599}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DF6EE9DF-8D4B-4EC4-B3F1-4275F7E6B599} = {D7A83143-9476-422C-B250-1E403F927DDB}
+	EndGlobalSection
+EndGlobal

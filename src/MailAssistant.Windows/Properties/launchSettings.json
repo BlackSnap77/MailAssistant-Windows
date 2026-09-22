@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "MailAssistant.Windows": {
+      "commandName": "Project"
+    }
+  }
+}

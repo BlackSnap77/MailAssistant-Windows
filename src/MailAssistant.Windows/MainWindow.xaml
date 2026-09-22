@@ -1,0 +1,14 @@
+<Window
+    x:Class="MailAssistant.Windows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="MailAssistant">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Margin="32">
+            <FontIcon Glyph="&#xE715;" FontSize="48" HorizontalAlignment="Center" />
+            <TextBlock Text="MailAssistant für Windows" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center" />
+            <TextBlock Text="Die Grundlage steht. Konten und E-Mails folgen im nächsten Schritt."
+                       TextWrapping="Wrap" TextAlignment="Center" MaxWidth="480" />
+        </StackPanel>
+    </Grid>
+</Window>
