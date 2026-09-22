@@ -4,11 +4,39 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="MailAssistant">
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Margin="32">
-            <FontIcon Glyph="&#xE715;" FontSize="48" HorizontalAlignment="Center" />
-            <TextBlock Text="MailAssistant für Windows" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center" />
-            <TextBlock Text="Die Grundlage steht. Konten und E-Mails folgen im nächsten Schritt."
-                       TextWrapping="Wrap" TextAlignment="Center" MaxWidth="480" />
-        </StackPanel>
+        <Grid Padding="32">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Spacing="16" VerticalAlignment="Top">
+                <FontIcon Glyph="&#xE715;" FontSize="48" HorizontalAlignment="Left" />
+                <TextBlock Text="MailAssistant für Windows" Style="{StaticResource TitleTextBlockStyle}" />
+                <TextBlock Text="Die Grundlage steht. Konten und E-Mails folgen im nächsten Schritt."
+                           TextWrapping="Wrap" MaxWidth="320" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Spacing="12" VerticalAlignment="Top">
+                <TextBlock Text="Konten" Style="{StaticResource TitleTextBlockStyle}" />
+                <ItemsControl x:Name="AccountsList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="12"
+                                Margin="0,0,0,8">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding DisplayName}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock Text="{Binding EmailAddress}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
