@@ -19,7 +19,7 @@
 
             <StackPanel Grid.Column="1" Spacing="12" VerticalAlignment="Top">
                 <TextBlock Text="Konten" Style="{StaticResource TitleTextBlockStyle}" />
-                <ItemsControl x:Name="AccountsList">
+                <ItemsControl x:Name="AccountsList" VerticalAlignment="Top">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border
@@ -36,6 +36,47 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <!-- Eingabemaske: optisch zur Konto-Card abgestimmtes Panel. -->
+                <Border
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="16"
+                    Margin="0,4,0,0">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Neues Konto hinzufügen" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Anzeigename" Style="{StaticResource BodyTextBlockStyle}" />
+                            <TextBox
+                                x:Name="DisplayNameTextBox"
+                                PlaceholderText="z. B. Arbeit"
+                                VerticalAlignment="Top" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="E-Mail-Adresse" Style="{StaticResource BodyTextBlockStyle}" />
+                            <TextBox
+                                x:Name="EmailAddressTextBox"
+                                PlaceholderText="vorname@beispiel.de"
+                                VerticalAlignment="Top" />
+                        </StackPanel>
+
+                        <Button
+                            x:Name="AccountAddedButton"
+                            Content="Konto hinzufügen"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center" />
+
+                        <TextBlock
+                            x:Name="StatusText"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            TextWrapping="Wrap"
+                            MaxWidth="360"
+                            Visibility="Collapsed" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </Grid>
     </Grid>

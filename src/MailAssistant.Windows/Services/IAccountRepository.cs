@@ -10,4 +10,7 @@ public interface IAccountRepository
 {
     /// <summary>Liefert alle aktuell bekannten Konten (immutable Kopie).</summary>
     IReadOnlyCollection<MailAccount> GetAll();
+
+    /// <summary>Fügt ein neues Konto hinzu.</summary>
+    void Add(MailAccount account);
 }
