@@ -15,7 +15,7 @@ public sealed record MailAccount : INotifyPropertyChanged
     /// UI-nur (kein Netzwerk/Persistenz); wird durch die Auswahl in der Liste gesetzt.
     /// </summary>
     public bool IsSelected
-    {
+{
         get => _isSelected;
         set
         {
@@ -44,8 +44,8 @@ public sealed record MailAccount : INotifyPropertyChanged
     public required Guid Id { get; init; }
 
     /// <summary>Anzeigename, z. B. "Arbeit" oder "Privat".</summary>
-    public required string DisplayName { get; init; }
+    public required string DisplayName { get; set; }
 
     /// <summary>E-Mail-Adresse des Kontos, z. B. "vorname@beispiel.de".</summary>
-    public required string EmailAddress { get; init; }
+    public required string EmailAddress { get; set; }
 }

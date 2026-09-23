@@ -15,6 +15,15 @@ public interface IAccountRepository
     void Add(MailAccount account);
 
     /// <summary>
+    /// Aktualisiert das Konto mit der angegebenen <paramref name="id" /> mit den neuen
+    /// <see cref="MailAccount.DisplayName" /> und <see cref="MailAccount.EmailAddress" />-Werten.
+    /// Die ID und die Objektidentität bleiben unverändert.
+    /// </summary>
+    /// <param name="account">Konto mit gültigen, bereits validierten Werten.</param>
+    /// <returns><c>true</c>, wenn ein Konto aktualisiert wurde; andernfalls <c>false</c>.</returns>
+    bool Update(MailAccount account);
+
+    /// <summary>
     /// Entfernt das Konto mit der angegebenen <paramref name="id" />.
     /// </summary>
     /// <param name="id">Eindeutige ID des zu entfernenden Kontos.</param>

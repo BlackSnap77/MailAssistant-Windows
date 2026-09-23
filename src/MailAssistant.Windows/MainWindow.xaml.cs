@@ -24,6 +24,13 @@ public sealed partial class MainWindow : Window
     /// </summary>
     private bool _isRemoveDialogOpen;
 
+    /// <summary>
+    /// Reentrancy-Guard: true, solange der Edit-ContentDialog geöffnet ist.
+    /// Verhindert ein zweites ContentDialog-Auslösen, das WinUI mit
+    /// „Only a single ContentDialog can be open at any time“ ablehnt.
+    /// </summary>
+    private bool _isEditDialogOpen;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -33,6 +40,7 @@ public sealed partial class MainWindow : Window
         _repository = new InMemoryAccountRepository();
         RefreshAccounts();
         AccountAddedButton.Click += OnAccountAddedButtonClick;
+        AccountEditButton.Click += OnAccountEditButtonClick;
         AccountRemoveButton.Click += OnAccountRemoveButtonClick;
     }
 
@@ -136,31 +144,190 @@ public sealed partial class MainWindow : Window
         // dessen Inhalt das DataTemplate ist.
         // Wir nutzen ItemContainerGenerator, um auf die Container zuzugreifen.
 
+        // ItemsControl ohne Virtualisierung/Recycling: Container sind 1:1
+        // über Items und Index erreichbar. (Kein Layout-Umbau.)
         for (var i = 0; i < _accounts.Count; i++)
         {
-            if (AccountsList.ContainerFromIndex(i) is not Border card)
+            // Container zunächst als allgemeiner DependencyObject holen.
+            // Beim plain ItemsControl liefert ContainerFromIndex den
+            // ContentPresenter (Container), nicht direkt den DataTemplate-Border.
+            // Ein "is not Border" Early-Exit würde hier den Border daher
+            // für immer überspringen – deshalb nicht pattern-matchen.
+            var container = AccountsList.ContainerFromIndex(i);
+            if (container is null)
             {
                 // Container kann noch nicht existieren (virtualisiert).
                 continue;
             }
 
+            // Border auflösen: direkt, wenn der Container selbst der
+            // Border ist (ItemsControl), sonst per Visual-Traversal in den
+            // Container-Inhalt (ContentPresenter) zum DataTemplate-Border.
+            var border = container as Border
+                ?? FindVisualChild<Border>((FrameworkElement)container);
+            if (border is null)
+            {
+                // Container/Template-Inhalt noch nicht gerendert.
+                continue;
+            }
+
             var account = _accounts[i];
+
             if (account.IsSelected)
             {
-                card.BorderThickness = new Thickness(2);
-                card.BorderBrush = TryGetThemeBrush("ControlAccentBrush")
-                    ?? new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x78, 0xD7));
-                card.Background = TryGetThemeBrush("CardBackgroundFillColorSecondaryBrush")
-                    ?? new SolidColorBrush(Color.FromArgb(0xFF, 0x2D, 0x2D, 0x2D));
+                // Sicherer fester Accent-Status: Theme-Brushes können den
+                // Selected-Zustand zu schwach oder identisch mit Neutral
+                // darstellen, daher hier bewusst feste Farben.
+                border.BorderThickness = new Thickness(2);
+                border.BorderBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x78, 0xD7));
+                border.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x1B, 0x2A, 0x3A));
             }
             else
             {
-                card.BorderThickness = new Thickness(1);
-                card.BorderBrush = TryGetThemeBrush("CardStrokeColorDefaultBrush")
-                    ?? new SolidColorBrush(Color.FromArgb(0xFF, 0x4A, 0x4A, 0x4A));
-                card.Background = TryGetThemeBrush("CardBackgroundFillColorDefaultBrush")
-                    ?? new SolidColorBrush(Color.FromArgb(0xFF, 0x1E, 0x1E, 0x1E));
+                border.BorderThickness = new Thickness(1);
+                border.BorderBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0x4A, 0x4A, 0x4A));
+                border.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x1E, 0x1E, 0x1E));
             }
+        }
+    }
+
+    /// <summary>
+    /// Sucht rekursiv im Visual-Tree unter <paramref name="root"/> nach dem
+    /// ersten Kind vom Typ <typeparamref name="T"/> (hier: dem benannten
+    /// Border "AccountCard" innerhalb des ItemsControl-Containers).
+    /// </summary>
+    private static T? FindVisualChild<T>(DependencyObject root) where T : DependencyObject
+    {
+        if (root is T typedRoot)
+        {
+            return typedRoot;
+        }
+
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            var nested = FindVisualChild<T>(child);
+            if (nested is not null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Öffnet einen ContentDialog, um das ausgewählte Konto (Name, E-Mail) zu bearbeiten.
+    /// Abbrechen ändert nichts; Speichern aktualisiert exakt das ausgewählte Konto im Repository.
+    /// </summary>
+    private async void OnAccountEditButtonClick(object? sender, RoutedEventArgs e)
+    {
+        // Reentrancy-Guard: kein zweiter ContentDialog gleichzeitig.
+        if (_isEditDialogOpen)
+        {
+            return;
+        }
+
+        var account = GetSelectedAccount();
+        if (account is null)
+        {
+            return;
+        }
+
+        // Dialog-Layout: Title, zwei TextBoxen (vorausgefüllt), Buttons.
+        var displayNameTextBox = new TextBox
+        {
+            Text = account.DisplayName,
+            Header = "Anzeigename",
+            Margin = new Thickness(0, 0, 0, 8),
+            Width = 320,
+            VerticalAlignment = VerticalAlignment.Top,
+        };
+
+        var emailAddressTextBox = new TextBox
+        {
+            Text = account.EmailAddress,
+            Header = "E-Mail-Adresse",
+            Width = 320,
+            VerticalAlignment = VerticalAlignment.Top,
+        };
+
+        var contentPanel = new StackPanel
+        {
+            Spacing = 0,
+            Width = 320,
+        };
+        contentPanel.Children.Add(displayNameTextBox);
+        contentPanel.Children.Add(emailAddressTextBox);
+
+        var dialog = new ContentDialog
+        {
+            Title = "Konto bearbeiten",
+            Content = contentPanel,
+            PrimaryButtonText = "Speichern",
+            CloseButtonText = "Abbrechen",
+        };
+
+        // XamlRoot explizit setzen – ohne das wirft ShowAsync ein ArgumentException.
+        dialog.XamlRoot = AccountEditButton.XamlRoot;
+
+        _isEditDialogOpen = true;
+        AccountEditButton.IsEnabled = false;
+        try
+        {
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                // Abbrechen: keinerlei Datenänderung, Auswahl bleibt bestehen.
+                return;
+            }
+
+            var newDisplayName = displayNameTextBox.Text.Trim();
+            var newEmailAddress = emailAddressTextBox.Text.Trim();
+
+            // Gleiche Validierung wie bei „Konto hinzufügen“.
+            if (string.IsNullOrWhiteSpace(newDisplayName))
+            {
+                SetStatus("Bitte einen Anzeigenamen für das Konto eingeben.", isError: true);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(newEmailAddress))
+            {
+                SetStatus("Bitte eine E-Mail-Adresse für das Konto eingeben.", isError: true);
+                return;
+            }
+            if (!newEmailAddress.Contains('@'))
+            {
+                SetStatus("E-Mail-Adresse ist ungültig: Bitte eine Adresse mit „@“ eingeben.", isError: true);
+                return;
+            }
+
+            // Exakt das ausgewählte Konto aktualisieren – ID bleibt unverändert.
+            // Auswahl (IsSelected) vor dem Refresh merken, damit sie danach erhalten bleibt.
+            var selectedId = account.Id;
+            var updated = account with { DisplayName = newDisplayName, EmailAddress = newEmailAddress };
+            _repository.Update(updated);
+            RefreshAccounts();
+
+            // Auswahl wiederherstellen: genau das bearbeitete Konto bleibt markiert.
+            foreach (var a in _accounts)
+            {
+                a.IsSelected = a.Id == selectedId;
+            }
+            UpdateAccountCardVisuals();
+            UpdateRemoveButtonState();
+            SetStatus($"Konto „{newDisplayName}“ gespeichert.", isError: false);
+        }
+        finally
+        {
+            _isEditDialogOpen = false;
+            UpdateRemoveButtonState();
         }
     }
 
@@ -232,12 +399,14 @@ public sealed partial class MainWindow : Window
         => _accounts.FirstOrDefault(a => a.IsSelected);
 
     /// <summary>
-    /// Hält den Zustand des Entfernen-Buttons mit der Auswahl in Einklang:
-    /// Der Button ist nur aktiv, wenn genau ein Konto ausgewählt ist.
+    /// Hält den Zustand beider Aktions-Buttons (Bearbeiten, Entfernen) mit der Auswahl in Einklang:
+    /// Ein Button ist nur aktiv, wenn genau ein Konto ausgewählt ist.
     /// </summary>
     private void UpdateRemoveButtonState()
     {
-        AccountRemoveButton.IsEnabled = GetSelectedAccount() is not null;
+        var hasSelection = GetSelectedAccount() is not null;
+        AccountEditButton.IsEnabled = hasSelection;
+        AccountRemoveButton.IsEnabled = hasSelection;
     }
 
     /// <summary>
