@@ -47,6 +47,9 @@ public sealed class InMemoryAccountRepository : IAccountRepository
 
         existing.DisplayName = account.DisplayName;
         existing.EmailAddress = account.EmailAddress;
+        existing.ImapHost = account.ImapHost;
+        existing.ImapPort = account.ImapPort;
+        existing.LoginUser = account.LoginUser;
         return true;
     }
 

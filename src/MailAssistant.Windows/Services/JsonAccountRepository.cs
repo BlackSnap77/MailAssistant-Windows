@@ -51,7 +51,21 @@ public sealed class JsonAccountRepository : IAccountRepository
     };
 
     // Nur Metadaten (ohne IsSelected, ohne Secrets) werden serialisiert.
-    private sealed record AccountEntry(Guid Id, string DisplayName, string EmailAddress);
+    // Die IMAP-Metadaten sind optional (Default-Marker über get-only init),
+    // damit alte Phase-5-JSON-Dateien ohne diese Felder weiterhin lesbar bleiben.
+    private sealed record AccountEntry(
+        Guid Id,
+        string DisplayName,
+        string EmailAddress,
+        [property: JsonPropertyName("ImapHost"), JsonInclude] string ImapHost,
+        [property: JsonPropertyName("ImapPort"), JsonInclude] int ImapPort,
+        [property: JsonPropertyName("LoginUser"), JsonInclude] string LoginUser)
+    {
+        public AccountEntry(Guid id, string displayName, string emailAddress)
+            : this(id, displayName, emailAddress, "", 0, "")
+        {
+        }
+    }
 
     private readonly string _filePath;
     private readonly List<MailAccount> _accounts = new();
@@ -111,6 +125,9 @@ public sealed class JsonAccountRepository : IAccountRepository
 
         existing.DisplayName = account.DisplayName;
         existing.EmailAddress = account.EmailAddress;
+        existing.ImapHost = account.ImapHost;
+        existing.ImapPort = account.ImapPort;
+        existing.LoginUser = account.LoginUser;
         Save();
         return true;
     }
@@ -211,11 +228,20 @@ public sealed class JsonAccountRepository : IAccountRepository
                 continue;
             }
 
+            // Backward-Kompatibilität: Fehlt ImapHost/LoginUser → "";
+            // fehlt ImapPort oder ist 0 → 993 (IMAPS-Standardport).
+            var imapHost = entry.ImapHost ?? "";
+            var loginUser = entry.LoginUser ?? "";
+            var imapPort = (entry.ImapPort <= 0) ? 993 : entry.ImapPort;
+
             result.Add(new MailAccount
             {
                 Id = entry.Id,
                 DisplayName = entry.DisplayName,
                 EmailAddress = entry.EmailAddress,
+                ImapHost = imapHost,
+                ImapPort = imapPort,
+                LoginUser = loginUser,
             });
         }
         return result;

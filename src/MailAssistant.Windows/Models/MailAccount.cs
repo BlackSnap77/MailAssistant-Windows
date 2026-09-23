@@ -48,4 +48,13 @@ public sealed record MailAccount : INotifyPropertyChanged
 
     /// <summary>E-Mail-Adresse des Kontos, z. B. "vorname@beispiel.de".</summary>
     public required string EmailAddress { get; set; }
+
+    /// <summary>IMAP-Serveradresse (Metadaten, noch ohne Netzwerk/Verbindung).</summary>
+    public string ImapHost { get; set; } = "";
+
+    /// <summary>IMAP-Port, Standard 993 (IMAPS).</summary>
+    public int ImapPort { get; set; } = 993;
+
+    /// <summary>Login-Nutzername für das IMAP-Protokoll (keins Passwort/kein Secret).</summary>
+    public string LoginUser { get; set; } = "";
 }
