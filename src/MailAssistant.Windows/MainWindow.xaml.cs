@@ -14,7 +14,7 @@ namespace MailAssistant.Windows;
 
 public sealed partial class MainWindow : Window
 {
-    private readonly IAccountRepository _repository;
+    private readonly IAccountRepository? _repository;
     private readonly ObservableCollection<MailAccount> _accounts = new();
 
     /// <summary>
@@ -36,8 +36,25 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         AppWindow.Resize(new global::Windows.Graphics.SizeInt32(1000, 700));
 
-        // Phase 2: lokale Demo-Konten, kein Netzwerk, keine Secrets.
-        _repository = new InMemoryAccountRepository();
+        // Phase 5: lokale, persistierte Konten. Konten überleben einen App-Neustart,
+        // indem sie in einer JSON-Datei unter %LOCALAPPDATA%\MailAssistant gespeichert
+        // werden (keine Registry, keine Datenbank, keine Secrets, kein Netzwerk).
+        //
+        // Der Konstruktor lädt die Datei: existiert sie noch nicht, wird mit einer
+        // leeren Liste gestartet (First-Run, keine Demo-Konten). Ist die Datei
+        // beschädigt/unlesbar, wird die Situation kontrolliert über den Statusbereich
+        // gemeldet – die App crasht nicht und die bestehende Datei bleibt erhalten.
+        try
+        {
+            _repository = new JsonAccountRepository();
+        }
+        catch (AccountPersistenceException ex)
+        {
+            // Repository bleibt null → die UI arbeitet mit einer leeren Liste weiter.
+            _repository = null;
+            SetStatus("Lokale Konten konnten nicht geladen werden: " + ex.Message, isError: true);
+        }
+
         RefreshAccounts();
         AccountAddedButton.Click += OnAccountAddedButtonClick;
         AccountEditButton.Click += OnAccountEditButtonClick;
@@ -80,9 +97,19 @@ public sealed partial class MainWindow : Window
             EmailAddress = emailAddress,
         };
 
-        _repository.Add(account);
+        // Phase 5: Persistenz kann fehlschlagen (IO/JSON). Dann wird kontrolliert
+        // gemeldet – die App crasht nicht, und es erfolgt keine halbgeschriebene Datei.
+        try
+        {
+            _repository?.Add(account);
+        }
+        catch (AccountPersistenceException ex)
+        {
+            SetStatus("Konto konnte nicht gespeichert werden: " + ex.Message, isError: true);
+            return;
+        }
 
-        // Liste sofort aktualisieren (Demo-Konten bleiben erhalten) und Eingabe leeren.
+        // Liste sofort aktualisieren und Eingabe leeren.
         RefreshAccounts();
         DisplayNameTextBox.Text = string.Empty;
         EmailAddressTextBox.Text = string.Empty;
@@ -95,7 +122,9 @@ public sealed partial class MainWindow : Window
     private void RefreshAccounts()
     {
         _accounts.Clear();
-        foreach (var a in _repository.GetAll())
+        // _repository kann null sein, wenn beim Laden ein Persistenzfehler auftrat
+        // (siehe Konstruktor): Die UI arbeitet dann mit einer leeren Liste weiter.
+        foreach (var a in _repository?.GetAll() ?? Array.Empty<MailAccount>())
         {
             _accounts.Add(a with { IsSelected = false });
         }
@@ -312,7 +341,16 @@ public sealed partial class MainWindow : Window
             // Auswahl (IsSelected) vor dem Refresh merken, damit sie danach erhalten bleibt.
             var selectedId = account.Id;
             var updated = account with { DisplayName = newDisplayName, EmailAddress = newEmailAddress };
-            _repository.Update(updated);
+            try
+            {
+                _repository?.Update(updated);
+            }
+            catch (AccountPersistenceException ex)
+            {
+                SetStatus("Konto konnte nicht gespeichert werden: " + ex.Message, isError: true);
+                return;
+            }
+
             RefreshAccounts();
 
             // Auswahl wiederherstellen: genau das bearbeitete Konto bleibt markiert.
@@ -382,7 +420,16 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            _repository.Remove(account.Id);
+            try
+            {
+                _repository?.Remove(account.Id);
+            }
+            catch (AccountPersistenceException ex)
+            {
+                SetStatus("Konto konnte nicht entfernt werden: " + ex.Message, isError: true);
+                return;
+            }
+
             RefreshAccounts();
             SetStatus($"Konto „{account.DisplayName}“ entfernt.", isError: false);
         }
@@ -423,11 +470,15 @@ public sealed partial class MainWindow : Window
 
         if (isError)
         {
-            StatusText.Foreground = TryGetThemeBrush("CardStrokeColorDefaultBrush")
-                ?? new SolidColorBrush(Color.FromArgb(0xFF, 0xE4, 0x2F, 0x21));
+            // Fehlermeldung: bewusst ein fester, heller Rotton (#F28B82) – dezent und
+            // ohne grellen Alarm, aber mit klarem Kontrast im Dark Theme.
+            // Bewusst kein Theme-Resource: die bisherigen Aufrufe lieferten null bzw.
+            // zu dunkle Brushes und ließen die Meldung praktisch unsichtbar.
+            StatusText.Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xF2, 0x8B, 0x82));
         }
         else
         {
+            // Normale Statusmeldungen bleiben neutral (sekundärer Text).
             StatusText.Foreground = TryGetThemeBrush("TextFillColorSecondaryBrush")
                 ?? new SolidColorBrush(Color.FromArgb(0xFF, 0x8A, 0x8A, 0x8A));
         }
