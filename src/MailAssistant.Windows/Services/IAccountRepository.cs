@@ -13,4 +13,11 @@ public interface IAccountRepository
 
     /// <summary>Fügt ein neues Konto hinzu.</summary>
     void Add(MailAccount account);
+
+    /// <summary>
+    /// Entfernt das Konto mit der angegebenen <paramref name="id" />.
+    /// </summary>
+    /// <param name="id">Eindeutige ID des zu entfernenden Kontos.</param>
+    /// <returns><c>true</c>, wenn ein Konto entfernt wurde; andernfalls <c>false</c>.</returns>
+    bool Remove(Guid id);
 }

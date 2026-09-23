@@ -34,4 +34,6 @@ public sealed class InMemoryAccountRepository : IAccountRepository
     public IReadOnlyCollection<MailAccount> GetAll() => _accounts;
 
     public void Add(MailAccount account) => _accounts.Add(account);
+
+    public bool Remove(Guid id) => _accounts.RemoveAll(account => account.Id == id) > 0;
 }

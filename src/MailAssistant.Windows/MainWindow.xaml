@@ -23,11 +23,15 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4"
+                                x:Name="AccountCard"
+                                Margin="0,0,0,8"
                                 Padding="12"
-                                Margin="0,0,0,8">
+                                CornerRadius="4"
+                                BorderThickness="1"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                Tapped="OnAccountCardTapped"
+                                HorizontalAlignment="Stretch">
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="{Binding DisplayName}" Style="{StaticResource BodyStrongTextBlockStyle}" />
                                     <TextBlock Text="{Binding EmailAddress}" />
@@ -68,6 +72,26 @@
                             Content="Konto hinzufügen"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center" />
+
+                        <StackPanel
+                            Spacing="6"
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Stretch">
+                            <Border
+                                Height="1"
+                                Background="{ThemeResource CardStrokeColorDefaultBrush}"
+                                Margin="0,0,0,4" />
+                            <Button
+                                x:Name="AccountRemoveButton"
+                                Content="Konto entfernen"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                IsEnabled="False"
+                                Foreground="{ThemeResource CardStrokeColorDefaultBrush}"
+                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                Click="OnAccountRemoveButtonClick" />
+                        </StackPanel>
 
                         <TextBlock
                             x:Name="StatusText"
